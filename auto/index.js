@@ -42,7 +42,7 @@ function getCustomKeycodes(input) {
 }
 
 const keymapFile = fs.readFileSync(
-    path.resolve("./via_keymap/keychron_q3_2022-07-03_2.json"),
+    path.resolve("./via_keymap/keychron_q3_2022-07-03.json"),
     "utf-8"
 );
 
@@ -107,4 +107,4 @@ const arr2C = keymapJSON.layers.map((arrKeymapVIA,layerIndex) => {
 });
 
 console.log(arr2C);
-ncp.copy(arr2C);
+ncp.copy(arr2C.join("\n\n"));
