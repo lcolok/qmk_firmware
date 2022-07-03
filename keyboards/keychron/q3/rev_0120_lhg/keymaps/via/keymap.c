@@ -21,7 +21,8 @@ enum layers{
     MAC_FN,
     WIN_BASE,
     LEFT_HANDED_GAMING,
-    WIN_FN
+    WIN_FN,
+    PLUS_ONE
 };
 
 enum custom_keycodes {
@@ -100,6 +101,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_NO  ,            KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,             KC_NO  ,            KC_NO  ,
         KC_NO  ,  KC_NO   , KC_NO  ,                                KC_NO  ,                                KC_NO  ,  KC_NO  ,  KC_NO  ,   KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ),
 
+    [PLUS_ONE] = LAYOUT_ansi_87(
+        KC_NO  ,            KC_BRID,  KC_BRIU,  KC_TASK,  KC_FLXP,  RGB_VAD,  RGB_VAI,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,  KC_VOLD,   KC_VOLU,  KC_NO  ,  KC_NO  ,  RGB_TOG,
+        KC_NO  ,  TO(WIN_BASE)   , TO(LEFT_HANDED_GAMING)  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,   KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,
+        RGB_TOG,  RGB_MOD , RGB_VAI,  RGB_HUI,  RGB_SAI,  RGB_SPI,  NK_TOGG,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,   KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,
+        KC_NO  ,  RGB_RMOD, RGB_VAD,  RGB_HUD,  RGB_SAD,  RGB_SPD,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,             KC_NO  ,
+        KC_NO  ,            KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ,             KC_NO  ,            KC_NO  ,
+        KC_NO  ,  KC_NO   , KC_NO  ,                                KC_NO  ,                                KC_NO  ,  KC_NO  ,  KC_NO  ,   KC_NO  ,  KC_NO  ,  KC_NO  ,  KC_NO  ),
 };
 
 #define WHITE   {0,0,255}

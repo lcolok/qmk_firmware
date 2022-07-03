@@ -41,7 +41,7 @@
 // 2: Windows
 // 3: Left Handed Gaming
 // 4: Windows Function
-#define DYNAMIC_KEYMAP_LAYER_COUNT 5
+#define DYNAMIC_KEYMAP_LAYER_COUNT 6
 
 #define RGB_MATRIX_KEYPRESSES
 #define RGB_MATRIX_KEYRELEASES
