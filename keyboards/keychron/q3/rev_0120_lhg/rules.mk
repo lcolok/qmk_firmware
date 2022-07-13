@@ -7,7 +7,7 @@ BOOTLOADER = stm32-dfu
 # Build Options
 #   change yes to no to disable
 #
-BOOTMAGIC_ENABLE = yes      # Enable Bootmagic Lite
+BOOTMAGIC_ENABLE = yes      # Enable Bootmagic Lite. Warning: Using Bootmagic Lite will always reset the EEPROM, so you will lose any settings that have been saved. 警告: 使用 Bootmagic Lite 将始终重置EEPROM，因此您将丢失已保存的所有设置。
 MOUSEKEY_ENABLE = yes       # Mouse keys
 EXTRAKEY_ENABLE = yes       # Audio control and System control
 CONSOLE_ENABLE = no         # Console for debug
