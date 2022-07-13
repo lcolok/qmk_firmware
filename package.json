@@ -7,7 +7,8 @@
   "license": "MIT",
   "scripts": {
     "start": "yarn auto",
-    "auto": "node auto"
+    "auto": "node auto",
+    "make": "make keychron/q3/rev_0120_lhg:via"
   },
   "type": "module",
   "dependencies": {
