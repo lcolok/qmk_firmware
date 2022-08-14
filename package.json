@@ -8,7 +8,7 @@
   "scripts": {
     "start": "yarn auto",
     "auto": "node auto",
-    "make": "make keychron/q3/rev_0120_lhg:via"
+    "make": "make -j keychron/q3/rev_0120_lhg:via"
   },
   "type": "module",
   "dependencies": {
