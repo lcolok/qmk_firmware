@@ -260,3 +260,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 void rgb_matrix_indicators_user(void) {
     set_layer_color(biton32(layer_state));
 }
+
+//设定灯效的默认状态
+void keyboard_post_init_user(void) {
+  rgb_matrix_enable_noeeprom(); // Enables RGB, without saving settings
+  rgb_matrix_sethsv_noeeprom(HSV_CYAN);
+  rgb_matrix_set_speed_noeeprom(125);
+  rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_MULTISPLASH);
+}

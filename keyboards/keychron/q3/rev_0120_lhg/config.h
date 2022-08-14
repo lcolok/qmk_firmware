@@ -35,12 +35,7 @@
 /* Enable CapsLcok LED */
 #define CAPS_LOCK_LED_INDEX 50
 
-// setup 5 layers
-// 0: Mac
-// 1: Mac function
-// 2: Windows
-// 3: Left Handed Gaming
-// 4: Windows Function
+// setup 10 layers
 #define DYNAMIC_KEYMAP_LAYER_COUNT 10
 
 #define RGB_MATRIX_KEYPRESSES
