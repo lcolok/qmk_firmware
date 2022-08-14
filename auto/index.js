@@ -3,7 +3,8 @@ import * as path from "path";
 import _ from "lodash";
 import * as ncp from "copy-paste";
 
-const layers = `    MAC_BASE,
+const layers = `
+MAC_BASE,
 MAC_FN,
 WIN_BASE,
 LEFT_HANDED_GAMING,
@@ -12,7 +13,8 @@ PLUS_ONE,
 PLUS_TWO,
 PLUS_THREE,
 PLUS_FOUR,
-PLUS_FIVE`;
+PLUS_FIVE
+`;
 
 const layerArr = text2Arr(layers);
 
@@ -42,7 +44,7 @@ function getCustomKeycodes(input) {
 }
 
 const keymapFile = fs.readFileSync(
-    path.resolve("./via_keymap/keychron_q3_2022年08月07日22-06-07.json"),
+    path.resolve("/Volumes/Archive/14客制化/客制化键盘专题/Q3/keychron_q3_2022年08月14日14-41-03-MOD.json"),
     "utf-8"
 );
 
