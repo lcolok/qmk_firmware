@@ -44,7 +44,7 @@ function getCustomKeycodes(input) {
 }
 
 const keymapFile = fs.readFileSync(
-    path.resolve("/Volumes/Archive/14客制化/客制化键盘专题/Q3/keychron_q3_2022年08月14日14-41-03-MOD.json"),
+    path.resolve("/Volumes/Archive/14客制化/客制化键盘专题/Q3/keychron_q3_2022年08月27日17-15-44-MOD.json"),
     "utf-8"
 );
 
