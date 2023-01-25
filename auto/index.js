@@ -44,7 +44,7 @@ function getCustomKeycodes(input) {
 }
 
 const keymapFile = fs.readFileSync(
-    path.resolve("//LCO_DS920/Archive/14客制化/客制化键盘专题/Q3/keychron_q3_2022年12月28日.json"),
+    path.resolve("/Volumes/Archive/14客制化/客制化键盘专题/Q3/keychron_q3_2023年01月25日23-14-20.json"),
     "utf-8"
 );
 
