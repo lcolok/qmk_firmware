@@ -23,6 +23,9 @@
 #define DIP_SWITCH_PINS \
     { A8 }
 
+#define DYNAMIC_KEYMAP_LAYER_COUNT 8
+#define DYNAMIC_KEYMAP_MACRO_COUNT 16
+
 /* Increase I2C speed to 1000 KHz */
 #define I2C1_TIMINGR_PRESC 0U
 #define I2C1_TIMINGR_SCLDEL 3U
