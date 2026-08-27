@@ -12,7 +12,7 @@
 #define PSCR_PACKET_SIZE 32
 #define PSCR_MAGIC0 0xA5
 #define PSCR_MAGIC1 0x5A
-#define PSCR_PROTOCOL_VERSION 0x01
+#define PSCR_PROTOCOL_VERSION 0x02
 #define PSCR_HEARTBEAT_TIMEOUT_MS 1000
 
 /* Host -> device. Values deliberately live outside VIA's current command-ID
@@ -156,18 +156,26 @@ uint8_t pixel_scroll_bridge_poll_interval_ms(void) {
     return takeover_enabled ? 3 : 10;
 }
 
-void pixel_scroll_bridge_send_delta(int16_t left_delta, int16_t right_delta, uint8_t mode_flags) {
+void pixel_scroll_bridge_send_sample(uint16_t left_angle, uint16_t right_angle,
+                                     int16_t left_delta, int16_t right_delta,
+                                     uint8_t mode_flags) {
     pixel_scroll_bridge_housekeeping();
-    if (!stream_enabled || (left_delta == 0 && right_delta == 0)) {
+    if (!stream_enabled) {
         return;
     }
 
+    /* Protocol v2 deliberately carries the absolute TMAG angles as the
+       source of truth. The host can unwrap 0..5759 itself, recover cleanly
+       from a dropped packet, and compare its delta with the firmware's
+       calculate_wheel_delta() result. */
     uint8_t packet[PSCR_PACKET_SIZE];
     init_packet(packet, PSCR_MSG_DELTA);
     packet[4] = bridge_state_flags() | mode_flags;
     store_u16_le(&packet[6], delta_sequence++);
     store_i16_le(&packet[8], left_delta);
     store_i16_le(&packet[10], right_delta);
-    store_u32_le(&packet[12], timer_read32());
+    store_u16_le(&packet[12], left_angle);
+    store_u16_le(&packet[14], right_angle);
+    store_u32_le(&packet[16], timer_read32());
     raw_hid_send(packet, sizeof(packet));
 }

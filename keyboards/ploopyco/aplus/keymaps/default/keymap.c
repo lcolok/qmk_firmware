@@ -505,7 +505,9 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
         if (matrix_is_on(0, 7)) {
             pixel_scroll_mode |= PSCR_FLAG_RIGHT_KNOB_DOWN;
         }
-        pixel_scroll_bridge_send_delta(leftwheel_delta, rightwheel_delta, pixel_scroll_mode);
+        pixel_scroll_bridge_send_sample(leftwheel_rawangle, rightwheel_rawangle,
+                                        leftwheel_delta, rightwheel_delta,
+                                        pixel_scroll_mode);
 
         /* If either of the wheels times out, we move the deadzone window to
            where the position is. This prevents spurious scroll events. */

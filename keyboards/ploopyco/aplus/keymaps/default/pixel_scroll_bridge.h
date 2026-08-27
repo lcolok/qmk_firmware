@@ -22,7 +22,9 @@ enum pixel_scroll_mode_flags {
 
 /* Called from the normal pointing task. */
 void pixel_scroll_bridge_housekeeping(void);
-void pixel_scroll_bridge_send_delta(int16_t left_delta, int16_t right_delta, uint8_t mode_flags);
+void pixel_scroll_bridge_send_sample(uint16_t left_angle, uint16_t right_angle,
+                                     int16_t left_delta, int16_t right_delta,
+                                     uint8_t mode_flags);
 
 /* CLAIM switches the normal wheel path off while a healthy companion is
  * present. A 1-second heartbeat timeout automatically restores factory wheel
