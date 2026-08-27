@@ -505,8 +505,16 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
         if (matrix_is_on(0, 7)) {
             pixel_scroll_mode |= PSCR_FLAG_RIGHT_KNOB_DOWN;
         }
-        pixel_scroll_bridge_send_sample(leftwheel_rawangle, rightwheel_rawangle,
+
+        tmag5273_debug_sample_t left_diag = {.angle = leftwheel_rawangle};
+        tmag5273_debug_sample_t right_diag = {.angle = rightwheel_rawangle};
+        if (pixel_scroll_bridge_streaming()) {
+            left_diag = tmag5273_get_debug_sample(TMAG5273_D0_I2C_ADDRESS);
+            right_diag = tmag5273_get_debug_sample(TMAG5273_D1_I2C_ADDRESS);
+        }
+        pixel_scroll_bridge_send_sample(left_diag.angle, right_diag.angle,
                                         leftwheel_delta, rightwheel_delta,
+                                        &left_diag, &right_diag,
                                         pixel_scroll_mode);
 
         /* If either of the wheels times out, we move the deadzone window to

@@ -79,6 +79,24 @@ uint16_t tmag5273_get_angle(uint8_t device_addr) {
     return rawangle;
 }
 
+tmag5273_debug_sample_t tmag5273_get_debug_sample(uint8_t device_addr) {
+    /* X/Y, conversion status, angle and magnitude are contiguous in the
+       TMAG5273 result register map (0x12..0x1B). Reading them in one frame
+       lets diagnostics compare the CORDIC angle with the underlying magnetic
+       vector from approximately the same conversion instant. */
+    uint8_t data[10] = {0};
+    i2c_read_register(device_addr, REG_X_MSB_RESULT, data, sizeof(data), 100);
+
+    tmag5273_debug_sample_t sample = {
+        .x = (int16_t)((uint16_t)data[0] << 8 | data[1]),
+        .y = (int16_t)((uint16_t)data[2] << 8 | data[3]),
+        .conv_status = data[6],
+        .angle = (uint16_t)((uint16_t)data[7] << 8 | data[8]),
+        .magnitude = data[9],
+    };
+    return sample;
+}
+
 /* Calculate the distance between two wheel positions. Takes into account wraparound and the
    size of the wheel. Positive values are clockwise distances, negative values CCW. */
 int16_t calculate_wheel_delta( uint16_t wheel_newangle, uint16_t wheel_oldangle ) {

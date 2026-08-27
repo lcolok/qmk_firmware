@@ -97,9 +97,18 @@
 #define REG_MAGNITUDE_RESULT        0x1B
 #define REG_DEVICE_STATUS           0x1C
 
+typedef struct {
+    int16_t x;
+    int16_t y;
+    uint16_t angle;
+    uint8_t magnitude;
+    uint8_t conv_status;
+} tmag5273_debug_sample_t;
+
 void tmag5273_init(void);
 void tmag5273_init_device(uint8_t);
 uint16_t tmag5273_get_angle(uint8_t);
+tmag5273_debug_sample_t tmag5273_get_debug_sample(uint8_t device_addr);
 
 int16_t calculate_wheel_delta( uint16_t wheel_rawangle, uint16_t wheel_current_position );
 int16_t calculate_deadzone_distance( uint16_t wheel_rawangle, uint16_t* wheel_deadzone_center );

@@ -12,7 +12,7 @@
 #define PSCR_PACKET_SIZE 32
 #define PSCR_MAGIC0 0xA5
 #define PSCR_MAGIC1 0x5A
-#define PSCR_PROTOCOL_VERSION 0x02
+#define PSCR_PROTOCOL_VERSION 0x03
 #define PSCR_HEARTBEAT_TIMEOUT_MS 1000
 
 /* Host -> device. Values deliberately live outside VIA's current command-ID
@@ -143,6 +143,11 @@ void pixel_scroll_bridge_housekeeping(void) {
     }
 }
 
+bool pixel_scroll_bridge_streaming(void) {
+    pixel_scroll_bridge_housekeeping();
+    return stream_enabled;
+}
+
 bool pixel_scroll_bridge_takeover(void) {
     pixel_scroll_bridge_housekeeping();
     return takeover_enabled;
@@ -158,16 +163,17 @@ uint8_t pixel_scroll_bridge_poll_interval_ms(void) {
 
 void pixel_scroll_bridge_send_sample(uint16_t left_angle, uint16_t right_angle,
                                      int16_t left_delta, int16_t right_delta,
+                                     const tmag5273_debug_sample_t *left_diag,
+                                     const tmag5273_debug_sample_t *right_diag,
                                      uint8_t mode_flags) {
     pixel_scroll_bridge_housekeeping();
-    if (!stream_enabled) {
+    if (!stream_enabled || left_diag == NULL || right_diag == NULL) {
         return;
     }
 
-    /* Protocol v2 deliberately carries the absolute TMAG angles as the
-       source of truth. The host can unwrap 0..5759 itself, recover cleanly
-       from a dropped packet, and compare its delta with the firmware's
-       calculate_wheel_delta() result. */
+    /* Protocol v3 keeps the v2 angle/delta fields and adds the underlying
+       X/Y magnetic vector plus magnitude and conversion status. This makes
+       the hardware-vs-CORDIC boundary directly observable on the host. */
     uint8_t packet[PSCR_PACKET_SIZE];
     init_packet(packet, PSCR_MSG_DELTA);
     packet[4] = bridge_state_flags() | mode_flags;
@@ -177,5 +183,13 @@ void pixel_scroll_bridge_send_sample(uint16_t left_angle, uint16_t right_angle,
     store_u16_le(&packet[12], left_angle);
     store_u16_le(&packet[14], right_angle);
     store_u32_le(&packet[16], timer_read32());
+    store_i16_le(&packet[20], left_diag->x);
+    store_i16_le(&packet[22], left_diag->y);
+    store_i16_le(&packet[24], right_diag->x);
+    store_i16_le(&packet[26], right_diag->y);
+    packet[28] = left_diag->magnitude;
+    packet[29] = right_diag->magnitude;
+    packet[30] = left_diag->conv_status;
+    packet[31] = right_diag->conv_status;
     raw_hid_send(packet, sizeof(packet));
 }

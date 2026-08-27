@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "../../../common/tmag5273wheel.h"
+
 /* Mode bits carried in each delta packet so the host can preserve the A+
  * firmware's non-scroll knob behaviours instead of blindly turning every
  * physical movement into pixels. */
@@ -22,8 +24,11 @@ enum pixel_scroll_mode_flags {
 
 /* Called from the normal pointing task. */
 void pixel_scroll_bridge_housekeeping(void);
+bool pixel_scroll_bridge_streaming(void);
 void pixel_scroll_bridge_send_sample(uint16_t left_angle, uint16_t right_angle,
                                      int16_t left_delta, int16_t right_delta,
+                                     const tmag5273_debug_sample_t *left_diag,
+                                     const tmag5273_debug_sample_t *right_diag,
                                      uint8_t mode_flags);
 
 /* CLAIM switches the normal wheel path off while a healthy companion is
