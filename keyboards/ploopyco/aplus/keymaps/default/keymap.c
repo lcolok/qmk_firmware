@@ -597,8 +597,16 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
             }
         }
 
-        /* If we're on Windows or Linux, send hi-res scroll events. */
-        if ( (detected_host_os() == OS_WINDOWS || detected_host_os() == OS_LINUX) ) {
+        /* Ploopy defaults to hi-res scrolling on Windows/Linux and a low-res
+           fallback elsewhere. Gate A can force the hi-res path so modern
+           macOS behaviour can be measured without changing the wheel math. */
+        bool use_hires_scroll =
+            (detected_host_os() == OS_WINDOWS || detected_host_os() == OS_LINUX);
+#ifdef PLOOPY_FORCE_HIRES_SCROLL
+        use_hires_scroll = true;
+#endif
+
+        if (use_hires_scroll) {
             
             if ( leftwheel_deadzone_distance > (TMAG5273_WHEEL_DEADZONE - 10) ||
                  leftwheel_deadzone_distance < (-TMAG5273_WHEEL_DEADZONE + 10)) {

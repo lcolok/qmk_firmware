@@ -19,3 +19,7 @@
 #pragma once
 
 #define DYNAMIC_KEYMAP_LAYER_COUNT 8
+
+/* Gate A experiment: exercise QMK high-resolution wheel reports on macOS.
+ * Remove this define to restore Ploopy's OS-specific low-resolution fallback. */
+#define PLOOPY_FORCE_HIRES_SCROLL
