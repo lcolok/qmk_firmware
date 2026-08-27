@@ -22,6 +22,7 @@
 
 #include "../../../common/tmag5273wheel.h"
 #include "pointing_device_gestures.h"
+#include "pixel_scroll_bridge.h"
 
 /* State variables for wheels. */
 uint16_t leftwheel_deadzone_center = 0;
@@ -443,8 +444,12 @@ uint32_t leftwheel_timeout = 0;
 uint32_t rightwheel_timeout = 0;
 
 report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
-    // throttle reads
-    if (timer_elapsed32(last_scroll_time) > 10) {
+    pixel_scroll_bridge_housekeeping();
+
+    // Keep factory sampling unless a live macOS companion has claimed the
+    // wheels; takeover raises the TMAG sampling rate for high-refresh output.
+    const uint8_t scroll_interval_ms = pixel_scroll_bridge_poll_interval_ms();
+    if (timer_elapsed32(last_scroll_time) > scroll_interval_ms) {
         uint16_t leftwheel_rawangle = tmag5273_get_angle(TMAG5273_D0_I2C_ADDRESS);
         uint16_t rightwheel_rawangle = tmag5273_get_angle(TMAG5273_D1_I2C_ADDRESS);
 
@@ -480,6 +485,27 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
 
         /* Reset the counter so we know when to next perform all this scroll processing. */
         last_scroll_time = timer_read32();
+
+        uint8_t pixel_scroll_mode = 0;
+        if (user_config.left_handed) {
+            pixel_scroll_mode |= PSCR_FLAG_LEFT_HANDED;
+        }
+        if (user_config.horizontal_scroll_arrows) {
+            pixel_scroll_mode |= PSCR_FLAG_HORIZONTAL_ARROWS;
+        }
+        if (user_config.vertical_scroll_arrows) {
+            pixel_scroll_mode |= PSCR_FLAG_VERTICAL_ARROWS;
+        }
+        if (layer_state_is(LAYER_CONTROL)) {
+            pixel_scroll_mode |= PSCR_FLAG_CONTROL_LAYER;
+        }
+        if (matrix_is_on(0, 6)) {
+            pixel_scroll_mode |= PSCR_FLAG_LEFT_KNOB_DOWN;
+        }
+        if (matrix_is_on(0, 7)) {
+            pixel_scroll_mode |= PSCR_FLAG_RIGHT_KNOB_DOWN;
+        }
+        pixel_scroll_bridge_send_delta(leftwheel_delta, rightwheel_delta, pixel_scroll_mode);
 
         /* If either of the wheels times out, we move the deadzone window to
            where the position is. This prevents spurious scroll events. */
@@ -597,6 +623,9 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
             }
         }
 
+        /* CLAIM mode delegates ordinary wheel output to the host companion.
+           OBSERVE/default mode keeps the factory scroll path fully active. */
+        if (!pixel_scroll_bridge_takeover()) {
         /* If we're on Windows or Linux, send hi-res scroll events. */
         if ( (detected_host_os() == OS_WINDOWS || detected_host_os() == OS_LINUX) ) {
             
@@ -682,6 +711,7 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
                     rightwheel_lowres_scroll_tick = 0;
                 }
             }
+        }
         }
 
         /* Set scroll data to zero if the corresponding button is 
