@@ -185,6 +185,16 @@ const USB_Descriptor_HIDReport_Datatype_t PROGMEM SharedReport[] = {
 
             // Vertical wheel (1 or 2 bytes)
             HID_RI_USAGE(8, 0x38),     // Wheel
+#    ifdef PLOOPY_MACOS_SCROLL_RESOLUTION_POC
+            /* Apple IOHIDEventService::determineResolution() derives
+             * HIDScrollResolution from a relative Wheel's logical/physical
+             * ranges.  The A+ wheel is 16-bit (-32767..32767); -273..273
+             * yields floor(65534 / 546) = 120, matching QMK's hi-res
+             * multiplier without changing report values or device identity. */
+            HID_RI_PHYSICAL_MINIMUM(16, -273),
+            HID_RI_PHYSICAL_MAXIMUM(16, 273),
+            HID_RI_UNIT_EXPONENT(8, 0),
+#    endif
 #    ifndef WHEEL_EXTENDED_REPORT
             HID_RI_LOGICAL_MINIMUM(8, MOUSE_REPORT_HV_MIN),
             HID_RI_LOGICAL_MAXIMUM(8, MOUSE_REPORT_HV_MAX),
@@ -197,6 +207,11 @@ const USB_Descriptor_HIDReport_Datatype_t PROGMEM SharedReport[] = {
             HID_RI_REPORT_SIZE(8, 0x10),
 #    endif
             HID_RI_INPUT(8, HID_IOF_DATA | HID_IOF_VARIABLE | HID_IOF_RELATIVE),
+#    ifdef PLOOPY_MACOS_SCROLL_RESOLUTION_POC
+            HID_RI_PHYSICAL_MINIMUM(8, 0x00),
+            HID_RI_PHYSICAL_MAXIMUM(8, 0x00),
+            HID_RI_UNIT_EXPONENT(8, 0),
+#    endif
 
             // Horizontal wheel (1 or 2 bytes)
             HID_RI_USAGE_PAGE(8, 0x0C),// Consumer
