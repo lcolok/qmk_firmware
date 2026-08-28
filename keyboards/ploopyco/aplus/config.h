@@ -42,6 +42,12 @@
 #define PLOOPY_DRAGSCROLL_MOMENTARY
 #define PLOOPY_DRAGSCROLL_DIVISOR_H 1.0
 #define PLOOPY_DRAGSCROLL_DIVISOR_V 0.3
+/* macOS does not surface QMK's hi-res wheel reports as precise/continuous
+ * scrolling, so the A+ launch values are far too aggressive there.  Use the
+ * common Ploopy drag-scroll baseline on macOS while preserving the official
+ * A+ values on Windows/Linux. */
+#define PLOOPY_DRAGSCROLL_DIVISOR_H_MACOS 8.0
+#define PLOOPY_DRAGSCROLL_DIVISOR_V_MACOS 8.0
 #define PLOOPY_DRAGSCROLL_INVERT
 
 /* PMW3360 Settings */
