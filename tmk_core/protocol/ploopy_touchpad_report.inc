@@ -1,7 +1,7 @@
     /* Gate C PoC: standard HID Digitizer/Touch Pad top-level collection with
      * two parallel Finger logical collections. */
     HID_RI_USAGE_PAGE(8, 0x0D),            // Digitizers
-    HID_RI_USAGE(8, 0x05),                 // Touch Pad
+    HID_RI_USAGE(8, 0x04),                 // Touch Screen (AppleMultitouchHIDService probe)
     HID_RI_COLLECTION(8, 0x01),            // Application
 #    ifdef DIGITIZER_SHARED_EP
         HID_RI_REPORT_ID(8, REPORT_ID_DIGITIZER),

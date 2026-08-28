@@ -2,7 +2,7 @@
     "keyboard_name": "Ploopy A+ Trackball",
     "url": "www.ploopy.co",
     "maintainer": "ploopyco",
-    "manufacturer": "Ploopy Corporation",
+    "manufacturer": "Apple",
     "processor": "RP2040",
     "bootloader": "rp2040",
     "bootloader_instructions": "Hold down the bottom left button while plugging USB cable in.",
