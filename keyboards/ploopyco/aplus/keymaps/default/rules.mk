@@ -1,2 +1,3 @@
 VIA_ENABLE = yes
+OPT_DEFS += -DPLOOPY_MACOS_SCROLL_RESOLUTION_POC
 SRC += pixel_scroll_bridge.c
