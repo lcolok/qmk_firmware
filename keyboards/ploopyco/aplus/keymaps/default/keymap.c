@@ -435,8 +435,8 @@ int16_t leftwheel_lowres_scroll_tick = 0;
 int16_t rightwheel_lowres_scroll_tick = 0;
 
 #ifdef PLOOPY_MACOS_SCROLL_RESOLUTION_POC
-#define PLOOPY_MACOS_VERT_HIRES_DIV 120
-#define PLOOPY_MACOS_HORIZ_HIRES_DIV 60
+#define PLOOPY_MACOS_VERT_HIRES_DIV 40
+#define PLOOPY_MACOS_HORIZ_HIRES_DIV 20
 int32_t leftwheel_macos_hires_accum = 0;
 int32_t rightwheel_macos_hires_accum = 0;
 
