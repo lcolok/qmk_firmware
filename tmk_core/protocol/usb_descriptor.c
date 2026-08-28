@@ -320,9 +320,9 @@ const USB_Descriptor_HIDReport_Datatype_t PROGMEM SharedReport[] = {
 #    endif
 #    ifdef PLOOPY_TOUCHPAD_POC
     /* Gate C PoC: standard HID Digitizer/Touch Pad top-level collection with
-     * two parallel Finger logical collections. Keep it on QMK's existing
-     * digitizer report ID/shared endpoint so Raw HID/VIA interface numbering
-     * and the normal mouse collection remain untouched. */
+     * two parallel Finger logical collections. Gate C v2 uses a dedicated
+     * digitizer interface so Touch Pad becomes the interface's primary usage;
+     * the same descriptor also remains valid if shared for later experiments. */
     HID_RI_USAGE_PAGE(8, 0x0D),            // Digitizers
     HID_RI_USAGE(8, 0x05),                 // Touch Pad
     HID_RI_COLLECTION(8, 0x01),            // Application

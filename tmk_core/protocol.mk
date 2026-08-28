@@ -79,8 +79,13 @@ endif
 ifeq ($(strip $(DIGITIZER_ENABLE)), yes)
     OPT_DEFS += -DDIGITIZER_ENABLE
     ifeq ($(strip $(SHARED_EP_ENABLE)), yes)
-        OPT_DEFS += -DDIGITIZER_SHARED_EP
-        SHARED_EP_ENABLE = yes
+        # Gate C deliberately keeps its Touch Pad on a dedicated HID
+        # interface. macOS parsed the shared collection but did not promote
+        # it to a native touchpad event source.
+        ifneq ($(strip $(PLOOPY_TOUCHPAD_POC)), yes)
+            OPT_DEFS += -DDIGITIZER_SHARED_EP
+            SHARED_EP_ENABLE = yes
+        endif
     endif
 endif
 
