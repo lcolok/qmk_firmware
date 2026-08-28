@@ -443,6 +443,10 @@ int16_t rightwheel_volume_scroll_tick = 0;
 uint32_t leftwheel_timeout = 0;
 uint32_t rightwheel_timeout = 0;
 
+bool ploopy_drag_scroll_user(int16_t x, int16_t y, bool active) {
+    return pixel_scroll_bridge_drag_scroll(x, y, active, dpi_array[keyboard_config.dpi_config]);
+}
+
 report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
     pixel_scroll_bridge_housekeeping();
 

@@ -36,6 +36,13 @@ void pixel_scroll_bridge_send_sample(uint16_t left_angle, uint16_t right_angle,
  * output. */
 bool pixel_scroll_bridge_takeover(void);
 
+/* Optional Gate B extension: a new companion can advertise DRAG_PIXEL in its
+ * CLAIM. While that capability is live, raw PMW3360 deltas from Ploopy's
+ * momentary Drag Scroll key are accumulated for a dedicated Raw HID packet.
+ * Returns true only when the host owns Drag Scroll; old companions therefore
+ * keep the normal firmware path unchanged. */
+bool pixel_scroll_bridge_drag_scroll(int16_t x, int16_t y, bool active, uint16_t cpi);
+
 /* Sampling remains factory-like while merely observing. CLAIM raises the
  * TMAG polling rate so a 120 Hz display is not starved by the stock >10 ms
  * wheel-processing interval. */

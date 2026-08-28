@@ -41,3 +41,8 @@ bool encoder_update_user(uint8_t index, bool clockwise);
 bool encoder_update_kb(uint8_t index, bool clockwise);
 void toggle_drag_scroll(void);
 void cycle_dpi(void);
+
+/* Optional device/keymap hook for a host-side drag-scroll implementation.
+ * Returning true while active means the hook consumed the raw pointing delta
+ * and the common Ploopy layer must not also emit wheel reports. */
+bool ploopy_drag_scroll_user(int16_t x, int16_t y, bool active);

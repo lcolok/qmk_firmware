@@ -145,8 +145,21 @@ void cycle_dpi(void) {
     pointing_device_set_cpi(dpi_array[keyboard_config.dpi_config]);
 }
 
+__attribute__((weak)) bool ploopy_drag_scroll_user(int16_t x, int16_t y, bool active) {
+    (void)x;
+    (void)y;
+    (void)active;
+    return false;
+}
+
 report_mouse_t pointing_device_task_kb(report_mouse_t mouse_report) {
-    if (is_drag_scroll) {
+    const bool host_drag_scroll = ploopy_drag_scroll_user((int16_t)mouse_report.x, (int16_t)mouse_report.y, is_drag_scroll);
+    if (is_drag_scroll && host_drag_scroll) {
+        mouse_report.x = 0;
+        mouse_report.y = 0;
+        mouse_report.h = 0;
+        mouse_report.v = 0;
+    } else if (is_drag_scroll) {
         float dragscroll_divisor_h = PLOOPY_DRAGSCROLL_DIVISOR_H;
         float dragscroll_divisor_v = PLOOPY_DRAGSCROLL_DIVISOR_V;
 #ifdef OS_DETECTION_ENABLE

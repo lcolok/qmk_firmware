@@ -26,19 +26,33 @@ enum pixel_scroll_host_message {
 
 /* Device -> host. */
 enum pixel_scroll_device_message {
-    PSCR_MSG_ACK   = 0x81,
-    PSCR_MSG_DELTA = 0x82,
+    PSCR_MSG_ACK         = 0x81,
+    PSCR_MSG_DELTA       = 0x82,
+    PSCR_MSG_DRAG_SCROLL = 0x83,
 };
+
+enum pixel_scroll_host_capabilities {
+    PSCR_CAP_DRAG_PIXEL = 1u << 0,
+};
+
+#define PSCR_SUPPORTED_CAPABILITIES PSCR_CAP_DRAG_PIXEL
 
 enum pixel_scroll_bridge_flags {
     PSCR_FLAG_STREAMING = 1u << 0,
     PSCR_FLAG_TAKEOVER  = 1u << 1,
 };
 
-static bool     stream_enabled       = false;
-static bool     takeover_enabled     = false;
-static uint32_t last_host_message_ms = 0;
-static uint16_t delta_sequence       = 0;
+static bool     stream_enabled         = false;
+static bool     takeover_enabled       = false;
+static uint8_t  host_capabilities      = 0;
+static uint32_t last_host_message_ms   = 0;
+static uint16_t delta_sequence         = 0;
+static uint16_t drag_sequence          = 0;
+static int32_t  drag_accumulated_x     = 0;
+static int32_t  drag_accumulated_y     = 0;
+static uint16_t drag_cpi               = 900;
+static bool     drag_scroll_active     = false;
+static bool     drag_last_sent_active  = false;
 
 static void store_u16_le(uint8_t *dst, uint16_t value) {
     dst[0] = (uint8_t)(value & 0xFFu);
@@ -54,6 +68,23 @@ static void store_u32_le(uint8_t *dst, uint32_t value) {
     dst[1] = (uint8_t)((value >> 8) & 0xFFu);
     dst[2] = (uint8_t)((value >> 16) & 0xFFu);
     dst[3] = (uint8_t)((value >> 24) & 0xFFu);
+}
+
+static void reset_drag_state(void) {
+    drag_accumulated_x    = 0;
+    drag_accumulated_y    = 0;
+    drag_scroll_active    = false;
+    drag_last_sent_active = false;
+}
+
+static int16_t clamp_drag_delta(int32_t value) {
+    if (value > INT16_MAX) {
+        return INT16_MAX;
+    }
+    if (value < INT16_MIN) {
+        return INT16_MIN;
+    }
+    return (int16_t)value;
 }
 
 static uint8_t bridge_state_flags(void) {
@@ -81,6 +112,7 @@ static void send_ack(uint8_t request_type, uint8_t status) {
     packet[4] = bridge_state_flags();
     packet[5] = request_type;
     packet[6] = status;
+    packet[7] = PSCR_SUPPORTED_CAPABILITIES;
     store_u32_le(&packet[8], timer_read32());
     raw_hid_send(packet, sizeof(packet));
 }
@@ -104,14 +136,18 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
         case PSCR_MSG_OBSERVE:
             stream_enabled       = true;
             takeover_enabled     = false;
+            host_capabilities    = 0;
             last_host_message_ms = timer_read32();
+            reset_drag_state();
             send_ack(request_type, 0);
             return true;
 
         case PSCR_MSG_CLAIM:
             stream_enabled       = true;
             takeover_enabled     = true;
+            host_capabilities    = data[4] & PSCR_SUPPORTED_CAPABILITIES;
             last_host_message_ms = timer_read32();
+            reset_drag_state();
             send_ack(request_type, 0);
             return true;
 
@@ -123,8 +159,10 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
             return true;
 
         case PSCR_MSG_RELEASE:
-            stream_enabled   = false;
-            takeover_enabled = false;
+            stream_enabled    = false;
+            takeover_enabled  = false;
+            host_capabilities = 0;
+            reset_drag_state();
             send_ack(request_type, 0);
             return true;
 
@@ -138,8 +176,10 @@ void pixel_scroll_bridge_housekeeping(void) {
     if (stream_enabled && timer_elapsed32(last_host_message_ms) > PSCR_HEARTBEAT_TIMEOUT_MS) {
         /* Fail open to the factory wheel path. A crashed/disconnected
          companion must never strand the user without scrolling. */
-        stream_enabled   = false;
-        takeover_enabled = false;
+        stream_enabled    = false;
+        takeover_enabled  = false;
+        host_capabilities = 0;
+        reset_drag_state();
     }
 }
 
@@ -151,6 +191,31 @@ bool pixel_scroll_bridge_streaming(void) {
 bool pixel_scroll_bridge_takeover(void) {
     pixel_scroll_bridge_housekeeping();
     return takeover_enabled;
+}
+
+bool pixel_scroll_bridge_drag_scroll(int16_t x, int16_t y, bool active, uint16_t cpi) {
+    pixel_scroll_bridge_housekeeping();
+    const bool host_owns_drag = takeover_enabled && (host_capabilities & PSCR_CAP_DRAG_PIXEL) != 0;
+    if (!host_owns_drag) {
+        reset_drag_state();
+        return false;
+    }
+
+    drag_scroll_active = active;
+    if (cpi != 0) {
+        drag_cpi = cpi;
+    }
+    if (active) {
+        int32_t next_x = drag_accumulated_x + x;
+        int32_t next_y = drag_accumulated_y + y;
+        if (next_x > INT16_MAX) next_x = INT16_MAX;
+        if (next_x < INT16_MIN) next_x = INT16_MIN;
+        if (next_y > INT16_MAX) next_y = INT16_MAX;
+        if (next_y < INT16_MIN) next_y = INT16_MIN;
+        drag_accumulated_x = next_x;
+        drag_accumulated_y = next_y;
+    }
+    return true;
 }
 
 uint8_t pixel_scroll_bridge_poll_interval_ms(void) {
@@ -192,4 +257,25 @@ void pixel_scroll_bridge_send_sample(uint16_t left_angle, uint16_t right_angle,
     packet[30] = left_diag->conv_status;
     packet[31] = right_diag->conv_status;
     raw_hid_send(packet, sizeof(packet));
+
+    /* Drag Scroll is a separate message so protocol-v3 TMAG diagnostics remain
+     * byte-for-byte stable.  Only a capability-negotiated companion receives
+     * this path; legacy companions keep firmware Drag Scroll untouched. */
+    const bool drag_has_delta = drag_accumulated_x != 0 || drag_accumulated_y != 0;
+    const bool drag_state_changed = drag_scroll_active != drag_last_sent_active;
+    if ((host_capabilities & PSCR_CAP_DRAG_PIXEL) != 0 && (drag_has_delta || drag_state_changed)) {
+        uint8_t drag_packet[PSCR_PACKET_SIZE];
+        init_packet(drag_packet, PSCR_MSG_DRAG_SCROLL);
+        drag_packet[4] = bridge_state_flags() | mode_flags;
+        drag_packet[5] = drag_scroll_active ? 1u : 0u;
+        store_u16_le(&drag_packet[6], drag_sequence++);
+        store_i16_le(&drag_packet[8], clamp_drag_delta(drag_accumulated_x));
+        store_i16_le(&drag_packet[10], clamp_drag_delta(drag_accumulated_y));
+        store_u32_le(&drag_packet[12], timer_read32());
+        store_u16_le(&drag_packet[16], drag_cpi);
+        raw_hid_send(drag_packet, sizeof(drag_packet));
+        drag_accumulated_x    = 0;
+        drag_accumulated_y    = 0;
+        drag_last_sent_active = drag_scroll_active;
+    }
 }
