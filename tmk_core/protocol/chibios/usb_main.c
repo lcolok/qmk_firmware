@@ -233,6 +233,45 @@ static void usb_event_cb(USBDriver *usbp, usbevent_t event) {
 
 static uint8_t _Alignas(4) set_report_buf[2];
 
+#ifdef PLOOPY_MT2_CANARY
+/* Magic Trackpad 2 USB multitouch-enable feature report.  Gate C v4a only
+ * acknowledges this one known request.  Every other GET/SET_REPORT on the
+ * experimental interface is deliberately stalled instead of returning
+ * zero-filled data to Apple's HID parser. */
+static uint8_t _Alignas(4) mt2_feature_report[2] = {0x02, 0x00};
+
+static void mt2_feature_set_transfer_cb(USBDriver *usbp) {
+    (void)usbp;
+    if (mt2_feature_report[0] != 0x02 || mt2_feature_report[1] != 0x01) {
+        mt2_feature_report[0] = 0x02;
+        mt2_feature_report[1] = 0x00;
+    }
+}
+
+static bool mt2_canary_report_request(USBDriver *usbp, usb_control_request_t *setup) {
+    const uint8_t report_type = setup->wValue.hbyte;
+    const uint8_t report_id   = setup->wValue.lbyte;
+
+    /* HID report type 3 is Feature. */
+    if (report_type != 0x03 || report_id != 0x02) {
+        return false;
+    }
+
+    if ((setup->bmRequestType & USB_RTYPE_DIR_MASK) == USB_RTYPE_DIR_DEV2HOST && setup->bRequest == HID_REQ_GetReport) {
+        const size_t length = setup->wLength < sizeof(mt2_feature_report) ? setup->wLength : sizeof(mt2_feature_report);
+        usbSetupTransfer(usbp, mt2_feature_report, length, NULL);
+        return true;
+    }
+
+    if ((setup->bmRequestType & USB_RTYPE_DIR_MASK) == USB_RTYPE_DIR_HOST2DEV && setup->bRequest == HID_REQ_SetReport && setup->wLength == sizeof(mt2_feature_report)) {
+        usbSetupTransfer(usbp, mt2_feature_report, sizeof(mt2_feature_report), mt2_feature_set_transfer_cb);
+        return true;
+    }
+
+    return false;
+}
+#endif
+
 static void set_led_transfer_cb(USBDriver *usbp) {
     usb_control_request_t *setup = (usb_control_request_t *)usbp->setup;
 
@@ -251,6 +290,13 @@ static bool usb_requests_hook_cb(USBDriver *usbp) {
 
     /* Handle HID class specific requests */
     if ((setup->bmRequestType & (USB_RTYPE_TYPE_MASK | USB_RTYPE_RECIPIENT_MASK)) == (USB_RTYPE_TYPE_CLASS | USB_RTYPE_RECIPIENT_INTERFACE)) {
+#ifdef PLOOPY_MT2_CANARY
+        if (setup->wIndex == DIGITIZER_INTERFACE && (setup->bRequest == HID_REQ_GetReport || setup->bRequest == HID_REQ_SetReport)) {
+            /* Returning false here deliberately leaves unknown canary reports
+             * unhandled so the control endpoint STALLs them. */
+            return mt2_canary_report_request(usbp, setup);
+        }
+#endif
         switch (setup->bmRequestType & USB_RTYPE_DIR_MASK) {
             case USB_RTYPE_DIR_DEV2HOST:
                 switch (setup->bRequest) {

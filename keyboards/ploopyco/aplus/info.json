@@ -1,15 +1,15 @@
 {
-    "keyboard_name": "Ploopy A+ Trackball",
+    "keyboard_name": "Magic Trackpad 2",
     "url": "www.ploopy.co",
     "maintainer": "ploopyco",
-    "manufacturer": "Apple",
+    "manufacturer": "Apple Inc.",
     "processor": "RP2040",
     "bootloader": "rp2040",
     "bootloader_instructions": "Hold down the bottom left button while plugging USB cable in.",
     "tags": ["trackball", "mouse", "scrollwheel"],
     "usb": {
-        "vid": "0x5043",
-        "pid": "0x81DB",
+        "vid": "0x05AC",
+        "pid": "0x0265",
         "max_power": 100
     },
     "features": {

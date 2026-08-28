@@ -292,7 +292,9 @@ enum usb_endpoints {
 #define CDC_NOTIFICATION_EPSIZE 8
 #define CDC_EPSIZE 16
 #define JOYSTICK_EPSIZE 8
-#ifdef PLOOPY_TOUCHPAD_POC
+#ifdef PLOOPY_MT2_CANARY
+#    define DIGITIZER_EPSIZE 64
+#elif defined(PLOOPY_TOUCHPAD_POC)
 #    define DIGITIZER_EPSIZE 16
 #else
 #    define DIGITIZER_EPSIZE 8

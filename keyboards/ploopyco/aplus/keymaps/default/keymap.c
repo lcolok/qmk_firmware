@@ -518,7 +518,7 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
                                         &left_diag, &right_diag,
                                         pixel_scroll_mode);
 
-#ifdef PLOOPY_TOUCHPAD_POC
+#if defined(PLOOPY_TOUCHPAD_POC) && !defined(PLOOPY_MT2_CANARY)
         /* Gate C uses the real-board-verified healthy left TMAG as a virtual
            two-finger vertical gesture. Preserve control/arrow/knob-press modes. */
         const bool touchpad_poc_enabled = !user_config.left_handed &&
@@ -644,7 +644,7 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
             }
         }
 
-#ifdef PLOOPY_TOUCHPAD_POC
+#if defined(PLOOPY_TOUCHPAD_POC) && !defined(PLOOPY_MT2_CANARY)
         /* Do not also emit the traditional vertical wheel while the virtual
            touchpad owns this physical control; that would make recognition
            tests impossible to interpret. */
