@@ -232,7 +232,9 @@ typedef struct {
 #ifdef DIGITIZER_SHARED_EP
     uint8_t report_id;
 #endif
-#ifdef PLOOPY_TOUCHPAD_POC
+#ifdef PLOOPY_MT2_STREAM
+    uint8_t data[30];
+#elif defined(PLOOPY_TOUCHPAD_POC)
     /* Experimental two-contact Touch Pad report. Each finger_state byte is:
      * bit0 Confidence, bit1 Tip Switch, bits2..3 Contact ID, bits4..7 pad. */
     uint8_t  finger1_state;

@@ -24,6 +24,7 @@
 #include "pointing_device_gestures.h"
 #include "pixel_scroll_bridge.h"
 #include "touchpad_poc.h"
+#include "mt2_scroll_poc.h"
 
 /* State variables for wheels. */
 uint16_t leftwheel_deadzone_center = 0;
@@ -519,13 +520,21 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
                                         pixel_scroll_mode);
 
 #if defined(PLOOPY_TOUCHPAD_POC) && !defined(PLOOPY_MT2_CANARY)
-        /* Gate C uses the real-board-verified healthy left TMAG as a virtual
-           two-finger vertical gesture. Preserve control/arrow/knob-press modes. */
+        /* Gates C v1/v2: standard HID Touch Pad experiment. */
         const bool touchpad_poc_enabled = !user_config.left_handed &&
                                           !layer_state_is(LAYER_CONTROL) &&
                                           !user_config.vertical_scroll_arrows &&
                                           !matrix_is_on(0, 6);
         touchpad_poc_process(leftwheel_delta, touchpad_poc_enabled);
+#endif
+#ifdef PLOOPY_MT2_STREAM
+        /* Gate C v4b: feed the healthy left TMAG into two synthetic fingers
+           while preserving the A+ control/arrow/knob-press modes. */
+        const bool mt2_scroll_poc_enabled = !user_config.left_handed &&
+                                            !layer_state_is(LAYER_CONTROL) &&
+                                            !user_config.vertical_scroll_arrows &&
+                                            !matrix_is_on(0, 6);
+        mt2_scroll_poc_process(leftwheel_delta, mt2_scroll_poc_enabled);
 #endif
 
         /* If either of the wheels times out, we move the deadzone window to
@@ -644,10 +653,9 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
             }
         }
 
-#if defined(PLOOPY_TOUCHPAD_POC) && !defined(PLOOPY_MT2_CANARY)
-        /* Do not also emit the traditional vertical wheel while the virtual
-           touchpad owns this physical control; that would make recognition
-           tests impossible to interpret. */
+#if (defined(PLOOPY_TOUCHPAD_POC) && !defined(PLOOPY_MT2_CANARY)) || defined(PLOOPY_MT2_STREAM)
+        /* Do not also emit traditional vertical wheel reports while a Gate C
+           touch path owns this physical control; that keeps the result clean. */
         if (!user_config.left_handed && !layer_state_is(LAYER_CONTROL) &&
             !user_config.vertical_scroll_arrows && !matrix_is_on(0, 6)) {
             leftwheel_delta = 0;
