@@ -311,7 +311,7 @@ const USB_Descriptor_HIDReport_Datatype_t PROGMEM SharedReport[] = {
 #    endif
 #endif
 
-#ifdef DIGITIZER_ENABLE
+#if defined(DIGITIZER_ENABLE) && (!defined(PLOOPY_TOUCHPAD_POC) || defined(DIGITIZER_SHARED_EP))
 #    ifndef DIGITIZER_SHARED_EP
 const USB_Descriptor_HIDReport_Datatype_t PROGMEM DigitizerReport[] = {
 #    elif !defined(SHARED_REPORT_STARTED)
@@ -537,6 +537,15 @@ const USB_Descriptor_HIDReport_Datatype_t PROGMEM SharedReport[] = {
 #endif
 
 #ifdef SHARED_EP_ENABLE
+};
+#endif
+
+#if defined(DIGITIZER_ENABLE) && defined(PLOOPY_TOUCHPAD_POC) && !defined(DIGITIZER_SHARED_EP)
+/* Gate C v2: keep Touch Pad on a dedicated HID interface. The declaration
+ * must live after SharedReport closes because Mouse/ExtraKey/NKRO may already
+ * have opened that aggregate descriptor earlier in this translation unit. */
+const USB_Descriptor_HIDReport_Datatype_t PROGMEM DigitizerReport[] = {
+#    include "ploopy_touchpad_report.inc"
 };
 #endif
 
