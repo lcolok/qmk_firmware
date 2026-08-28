@@ -385,9 +385,20 @@ const USB_Descriptor_HIDReport_Datatype_t PROGMEM SharedReport[] = {
     HID_RI_USAGE(8, 0x80),                // System Control
     HID_RI_COLLECTION(8, 0x01),           // Application
         HID_RI_REPORT_ID(8, REPORT_ID_SYSTEM),
+#ifdef PLOOPY_MACOS_SCROLL_RESOLUTION_POC
+        /* QMK's actual System Control usages begin at 0x81.  Advertising the
+         * historical 0x01..0xB7 array makes macOS synthesize Generic Desktop
+         * X/Y/Z/Dial/Wheel elements inside report ID 3; its HID event service
+         * then mistakes the non-relative pseudo Wheel for a real scroll axis
+         * and overwrites the mouse Wheel resolution with the default 9<<16. */
+        HID_RI_USAGE_MINIMUM(8, 0x81),    // System Power Down
+        HID_RI_USAGE_MAXIMUM(16, 0x00B7), // System Display LCD Autoscale
+        HID_RI_LOGICAL_MINIMUM(8, 0x81),
+#else
         HID_RI_USAGE_MINIMUM(8, 0x01),    // Pointer
         HID_RI_USAGE_MAXIMUM(16, 0x00B7), // System Display LCD Autoscale
         HID_RI_LOGICAL_MINIMUM(8, 0x01),
+#endif
         HID_RI_LOGICAL_MAXIMUM(16, 0x00B7),
         HID_RI_REPORT_COUNT(8, 1),
         HID_RI_REPORT_SIZE(8, 16),
