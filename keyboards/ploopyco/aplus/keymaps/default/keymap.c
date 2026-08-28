@@ -640,8 +640,18 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
         /* CLAIM mode delegates ordinary wheel output to the host companion.
            OBSERVE/default mode keeps the factory scroll path fully active. */
         if (!pixel_scroll_bridge_takeover()) {
-        /* If we're on Windows or Linux, send hi-res scroll events. */
-        if ( (detected_host_os() == OS_WINDOWS || detected_host_os() == OS_LINUX) ) {
+        /* Windows/Linux already use the 16-bit hi-res wheel path. Gate D v2
+           proves macOS now accepts the corrected 120x Wheel descriptor, so the
+           Gate D experiment can finally feed the same fine-grained TMAG deltas
+           instead of quantizing them back to +/-1 low-res ticks. */
+        bool use_hires_scroll =
+            (detected_host_os() == OS_WINDOWS || detected_host_os() == OS_LINUX);
+#ifdef PLOOPY_MACOS_SCROLL_RESOLUTION_POC
+        if (detected_host_os() == OS_MACOS) {
+            use_hires_scroll = true;
+        }
+#endif
+        if (use_hires_scroll) {
             
             if ( leftwheel_deadzone_distance > (TMAG5273_WHEEL_DEADZONE - 10) ||
                  leftwheel_deadzone_distance < (-TMAG5273_WHEEL_DEADZONE + 10)) {
