@@ -434,6 +434,20 @@ bool process_record_user(uint16_t keycode, keyrecord_t* record) {
 int16_t leftwheel_lowres_scroll_tick = 0;
 int16_t rightwheel_lowres_scroll_tick = 0;
 
+#ifdef PLOOPY_MACOS_SCROLL_RESOLUTION_POC
+#define PLOOPY_MACOS_VERT_HIRES_DIV 120
+#define PLOOPY_MACOS_HORIZ_HIRES_DIV 60
+int32_t leftwheel_macos_hires_accum = 0;
+int32_t rightwheel_macos_hires_accum = 0;
+
+static int16_t consume_macos_hires_delta(int16_t delta, int32_t *accumulator, int16_t divisor) {
+    *accumulator += delta;
+    const int16_t output = (int16_t)(*accumulator / divisor);
+    *accumulator -= (int32_t)output * divisor;
+    return output;
+}
+#endif
+
 int16_t leftwheel_arrow_scroll_tick = 0;
 int16_t rightwheel_arrow_scroll_tick = 0;
 
@@ -652,29 +666,58 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
         }
 #endif
         if (use_hires_scroll) {
-            
+#ifdef PLOOPY_MACOS_SCROLL_RESOLUTION_POC
+            const bool macos_hires = detected_host_os() == OS_MACOS;
+#else
+            const bool macos_hires = false;
+#endif
+
             if ( leftwheel_deadzone_distance > (TMAG5273_WHEEL_DEADZONE - 10) ||
                  leftwheel_deadzone_distance < (-TMAG5273_WHEEL_DEADZONE + 10)) {
 
                 if( user_config.left_handed ) {
                     if( !user_config.horizontal_scroll_arrows ) {
+#ifdef PLOOPY_MACOS_SCROLL_RESOLUTION_POC
+                        mouse_report.h = macos_hires
+                            ? consume_macos_hires_delta(leftwheel_delta, &leftwheel_macos_hires_accum, PLOOPY_MACOS_HORIZ_HIRES_DIV)
+                            : leftwheel_delta / TMAG5273_HORIZONAL_WHEEL_SPEED_DIV;
+#else
                         mouse_report.h = leftwheel_delta / TMAG5273_HORIZONAL_WHEEL_SPEED_DIV;
+#endif
                     }
                     
                 }
                 else {
+#ifdef PLOOPY_MACOS_SCROLL_RESOLUTION_POC
+                    mouse_report.v = macos_hires
+                        ? -consume_macos_hires_delta(leftwheel_delta, &leftwheel_macos_hires_accum, PLOOPY_MACOS_VERT_HIRES_DIV)
+                        : -leftwheel_delta / TMAG5273_VERTICAL_WHEEL_SPEED_DIV;
+#else
                     mouse_report.v = -leftwheel_delta / TMAG5273_VERTICAL_WHEEL_SPEED_DIV;
+#endif
                 }
             }
             if ( rightwheel_deadzone_distance > (TMAG5273_WHEEL_DEADZONE - 10) ||
                  rightwheel_deadzone_distance < (-TMAG5273_WHEEL_DEADZONE + 10)) {
 
                 if( user_config.left_handed ) {
+#ifdef PLOOPY_MACOS_SCROLL_RESOLUTION_POC
+                    mouse_report.v = macos_hires
+                        ? -consume_macos_hires_delta(rightwheel_delta, &rightwheel_macos_hires_accum, PLOOPY_MACOS_VERT_HIRES_DIV)
+                        : -rightwheel_delta / TMAG5273_VERTICAL_WHEEL_SPEED_DIV;
+#else
                     mouse_report.v = -rightwheel_delta / TMAG5273_VERTICAL_WHEEL_SPEED_DIV;
+#endif
                 }
                 else {
                     if( !user_config.horizontal_scroll_arrows ) {
+#ifdef PLOOPY_MACOS_SCROLL_RESOLUTION_POC
+                        mouse_report.h = macos_hires
+                            ? consume_macos_hires_delta(rightwheel_delta, &rightwheel_macos_hires_accum, PLOOPY_MACOS_HORIZ_HIRES_DIV)
+                            : rightwheel_delta / TMAG5273_HORIZONAL_WHEEL_SPEED_DIV;
+#else
                         mouse_report.h = rightwheel_delta / TMAG5273_HORIZONAL_WHEEL_SPEED_DIV;
+#endif
                     }
                 }
             }
