@@ -23,6 +23,7 @@
 #include "../../../common/tmag5273wheel.h"
 #include "pointing_device_gestures.h"
 #include "pixel_scroll_bridge.h"
+#include "touchpad_poc.h"
 
 /* State variables for wheels. */
 uint16_t leftwheel_deadzone_center = 0;
@@ -517,6 +518,16 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
                                         &left_diag, &right_diag,
                                         pixel_scroll_mode);
 
+#ifdef PLOOPY_TOUCHPAD_POC
+        /* Gate C uses the real-board-verified healthy left TMAG as a virtual
+           two-finger vertical gesture. Preserve control/arrow/knob-press modes. */
+        const bool touchpad_poc_enabled = !user_config.left_handed &&
+                                          !layer_state_is(LAYER_CONTROL) &&
+                                          !user_config.vertical_scroll_arrows &&
+                                          !matrix_is_on(0, 6);
+        touchpad_poc_process(leftwheel_delta, touchpad_poc_enabled);
+#endif
+
         /* If either of the wheels times out, we move the deadzone window to
            where the position is. This prevents spurious scroll events. */
         if( leftwheel_timeout >= TMAG5273_DEADZONE_PROTECTOR_TIMEOUT && 
@@ -632,6 +643,16 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
                 leftwheel_delta = 0;
             }
         }
+
+#ifdef PLOOPY_TOUCHPAD_POC
+        /* Do not also emit the traditional vertical wheel while the virtual
+           touchpad owns this physical control; that would make recognition
+           tests impossible to interpret. */
+        if (!user_config.left_handed && !layer_state_is(LAYER_CONTROL) &&
+            !user_config.vertical_scroll_arrows && !matrix_is_on(0, 6)) {
+            leftwheel_delta = 0;
+        }
+#endif
 
         /* CLAIM mode delegates ordinary wheel output to the host companion.
            OBSERVE/default mode keeps the factory scroll path fully active. */

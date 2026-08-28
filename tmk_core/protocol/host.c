@@ -312,10 +312,15 @@ __attribute__((weak)) void send_joystick(report_joystick_t *report) {}
 
 #ifdef DIGITIZER_ENABLE
 void host_digitizer_send(digitizer_t *digitizer) {
+#    ifdef PLOOPY_TOUCHPAD_POC
+    /* The experimental Touch Pad reuses the digitizer transport but has a
+     * different report layout. A+ keymap code sends that report directly. */
+    (void)digitizer;
+#    else
     report_digitizer_t report = {
-#    ifdef DIGITIZER_SHARED_EP
+#        ifdef DIGITIZER_SHARED_EP
         .report_id = REPORT_ID_DIGITIZER,
-#    endif
+#        endif
         .in_range = digitizer->in_range,
         .tip      = digitizer->tip,
         .barrel   = digitizer->barrel,
@@ -324,6 +329,7 @@ void host_digitizer_send(digitizer_t *digitizer) {
     };
 
     send_digitizer(&report);
+#    endif
 }
 #endif
 

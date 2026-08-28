@@ -232,12 +232,24 @@ typedef struct {
 #ifdef DIGITIZER_SHARED_EP
     uint8_t report_id;
 #endif
+#ifdef PLOOPY_TOUCHPAD_POC
+    /* Experimental two-contact Touch Pad report. Each finger_state byte is:
+     * bit0 Confidence, bit1 Tip Switch, bits2..3 Contact ID, bits4..7 pad. */
+    uint8_t  finger1_state;
+    uint16_t finger1_x;
+    uint16_t finger1_y;
+    uint8_t  finger2_state;
+    uint16_t finger2_x;
+    uint16_t finger2_y;
+    uint8_t  contact_count;
+#else
     bool     in_range : 1;
     bool     tip : 1;
     bool     barrel : 1;
     uint8_t  reserved : 5;
     uint16_t x;
     uint16_t y;
+#endif
 } PACKED report_digitizer_t;
 
 #if JOYSTICK_AXIS_RESOLUTION > 8
