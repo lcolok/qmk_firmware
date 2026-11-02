@@ -16,14 +16,16 @@ EEPROM：34 字节 QMK 配置 + 4 字节 VIA 元数据 + 1728 字节键位（8×
 
 ## 构建与主机测试
 
-在仓库根目录：
+2026-11-02 起开发机为 rokuro，MacBook 只负责连接硬件与 DFU 烧录。macOS/arm64 开发机不需要在宿主机安装 ARM GCC 或 QMK，直接用官方容器：
 
 ```sh
-make keychron/q3_pro/ansi_encoder_se:via -j4
+util/q3pro_auto/build.sh            # 默认 keychron/q3_pro/ansi_encoder_se:via
 sh util/q3pro_auto/test-policy.sh
 swiftc util/q3pro_auto/companion.swift -o /tmp/q3pro-companion
 /tmp/q3pro-companion --probe
 ```
+
+容器为 `qmkfm/qmk_cli`（当前 GCC 15.2.0、qmk 1.2.0）；脚本每次先安装 `requirements.txt`，构建后把产物属主交还当前用户。2026-11-02 在 rokuro 上的产物是 58948 字节、SHA256 `1d1e437e3704338494bac8be225cdc97383d81155c065291539854078564628c`，与 MacBook 上 GCC 8.3.1 的 55904 字节不同，**尚未实机烧录验收**。宿主机已有匹配工具链时仍可直接 `make keychron/q3_pro/ansi_encoder_se:via -j4`。
 
 策略测试直接编译 `ansi_encoder_se.c`，模拟时钟和 `default_layer_set`，开启 ASan/UBSan，覆盖手动拒绝、层数边界、7 秒到期、255 秒租约、续租、模式切换、32 位回绕和短包。它不替代硬件按键验收。
 
