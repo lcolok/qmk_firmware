@@ -16,6 +16,11 @@
 
 #pragma once
 
+#ifdef VIA_ENABLE
+// 与已导出的 8 层布局一致，宏区保留 250 字节。
+#    define DYNAMIC_KEYMAP_LAYER_COUNT 8
+#endif
+
 #ifdef RGB_MATRIX_ENABLE
 /* RGB Matrix Driver Configuration */
 #    define DRIVER_COUNT 2

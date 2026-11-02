@@ -123,3 +123,127 @@ const ckled2001_led g_ckled2001_leds[RGB_MATRIX_LED_COUNT] = {
     {1, I_2,    G_2,    H_2},
 };
 #endif
+
+// ---------------------------------------------------------------------------
+// Auto mode: DIP selects the policy, the host signal selects the state.
+//
+// Division of labour:
+//   DIP (single, pin A8) = policy selector.
+//     DIP off -> manual: DIP position selects the default layer (the original
+//                Keychron behaviour, preserved through the weak hook in
+//                q3_pro.c).
+//     DIP on  -> auto: the host-side companion program decides the layer.
+//
+//   VIA custom value (channel 0, value_id 0x10) = state source.
+//     SET: value_data[0] = target layer, value_data[1] = lease seconds
+//          (0 -> AUTO_LEASE_DEFAULT).
+//     GET: value_data[0] = mode (0 manual / 1 auto), [1] = last applied layer,
+//          [2] = lease remaining seconds, [3] = signal present (0/1).
+//     GET works in both modes for observability; SET is only accepted in auto.
+//
+//   Lease expiry falls back to AUTO_FALLBACK_LAYER, so losing the companion
+//   program cannot leave the keyboard stuck on a host-chosen layer.
+// ---------------------------------------------------------------------------
+
+#ifdef VIA_ENABLE
+#    include "via.h"
+
+#    define AUTO_VALUE_ID        0x10
+#    define AUTO_FALLBACK_LAYER  0
+#    define AUTO_LEASE_DEFAULT   7
+
+// Declared weak in q3_pro.c; this is the variant's strong definition.
+bool q3p_dip_policy(uint8_t index, bool active);
+
+static bool     auto_mode  = false;
+static uint8_t  auto_layer = AUTO_FALLBACK_LAYER;
+static uint8_t  auto_lease = AUTO_LEASE_DEFAULT;
+static uint32_t auto_last  = 0;
+static bool     auto_have  = false;
+
+static void auto_expire(void) {
+    if (auto_have && timer_elapsed32(auto_last) >= (uint32_t)auto_lease * 1000) {
+        auto_have = false;
+        if (auto_mode) default_layer_set(1UL << AUTO_FALLBACK_LAYER);
+    }
+}
+
+bool q3p_dip_policy(uint8_t index, bool active) {
+    if (index != 0) return false;
+
+    auto_mode = active;
+
+    if (!auto_mode) {
+        // 手动模式撤销旧信号，重新进入自动模式必须收到新租约。
+        auto_have = false;
+        return false;
+    }
+
+    auto_expire();
+    default_layer_set(1UL << (auto_have ? auto_layer : AUTO_FALLBACK_LAYER));
+    return true;
+}
+
+void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
+    if (length < 3) {
+        if (length) data[0] = id_unhandled;
+        return;
+    }
+    auto_expire();
+    uint8_t *command_id   = &(data[0]);
+    uint8_t *channel_id   = &(data[1]);
+    uint8_t *value_id     = &(data[2]);
+    uint8_t *value_data   = &(data[3]);
+
+    if (*channel_id != id_custom_channel || *value_id != AUTO_VALUE_ID) {
+        *command_id = id_unhandled;
+        return;
+    }
+
+    if (*command_id == id_custom_get_value) {
+        if (length < 7) {
+            *command_id = id_unhandled;
+            return;
+        }
+        uint32_t remain = 0;
+        if (auto_have) {
+            uint32_t elapsed = timer_elapsed32(auto_last);
+            uint32_t lease_ms = (uint32_t)auto_lease * 1000;
+            remain = (elapsed < lease_ms) ? lease_ms - elapsed : 0;
+        }
+        value_data[0] = auto_mode ? 1 : 0;
+        value_data[1] = auto_layer;
+        value_data[2] = (uint8_t)(remain / 1000);
+        value_data[3] = auto_have ? 1 : 0;
+        return;
+    }
+
+    if (*command_id == id_custom_set_value) {
+        if (length < 5 || !auto_mode) {
+            // The host does not own the layer while the DIP says manual.
+            *command_id = id_unhandled;
+            return;
+        }
+
+        uint8_t target = value_data[0];
+        if (target >= DYNAMIC_KEYMAP_LAYER_COUNT) {
+            *command_id = id_unhandled;
+            return;
+        }
+
+        auto_layer = target;
+        auto_lease = value_data[1] ? value_data[1] : AUTO_LEASE_DEFAULT;
+        auto_last  = timer_read32();
+        auto_have  = true;
+
+        default_layer_set(1UL << target);
+        return;
+    }
+
+    *command_id = id_unhandled;
+}
+
+void housekeeping_task_user(void) {
+    auto_expire();
+}
+#endif

@@ -63,9 +63,19 @@ static void pairing_key_timer_cb(void *arg) {
 #endif
 
 #ifdef DIP_SWITCH_ENABLE
+// Keyboard-level policy hook. Returns true if it handled the DIP event, in
+// which case the default layer is NOT set from the DIP position here.
+// Default (weak) implementation returns false, preserving the original
+// "DIP selects the default layer" behaviour for every variant.
+__attribute__((weak)) bool q3p_dip_policy(uint8_t index, bool active) {
+    return false;
+}
+
 bool dip_switch_update_kb(uint8_t index, bool active) {
-    if (index == 0) {
-        default_layer_set(1UL << (active ? 2 : 0));
+    if (!q3p_dip_policy(index, active)) {
+        if (index == 0) {
+            default_layer_set(1UL << (active ? 2 : 0));
+        }
     }
     dip_switch_update_user(index, active);
 
